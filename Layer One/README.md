@@ -691,3 +691,98 @@ Chce říct uživateli, že je debil a neumí to ovládat 5x
 
 For cyklus vezme kus kódu a zopakuje ho 
 iterační proměnná for (int i - 0)
+
+
+## Session 2 — vlastní projekt PandaNursery (15. 5. 2026)
+
+Ticket #2 — registrace pandy přes proměnné + uživatelský vstup. Dotáhla sem to + bonus na robustní parse váhy (pokrývá `50`, `50,5`, `50.5`, `50 kg`, `50 KG`...).
+
+### Proměnné a typy 
+**string** = text, **int** = celé číslo, **float** = desetinné, **bool** = true/false.  
+Deklarace = rezervace škatulky v paměti: `string jmenoPandy;`. Bez `=` je škatulka prázdná, do té doby do ní nelze sahat (kompilátor řekne *use of unassigned local variable*).  
+Konvence pojmenování = **camelCase** (`jmenoPandy`, `vahaKg`, `textovyVstup`).
+
+### Vstup od uživatele 
+**Console.ReadLine()** = počká na **Enter**, vrátí to co uživatel napsal (vždycky **string**).  
+**Console.ReadKey()** = pustí dál na **libovolnou klávesu** (mezera, šipka, písmeno = všechno).  
+Když chci opravdu jen Enter, použiju **ReadLine** (i kdyby návratovou hodnotu nepotřebovala).
+
+### Parse — převod string → float 
+Console.ReadLine vrátí string. Pro float musím **parsovat**:
+```csharp
+vahaKg = float.Parse(textovyVstup);
+```
+Pomocná škatulka **textovyVstup** je *přestupní stanice* mezi ReadLine (vrací string) a Parse (potřebuje string na vstupu, vrací float).  
+Bez parse → compile error *cannot convert string to float*.
+
+### Locale — čárka vs tečka 
+Mac mám v českém locale, takže Parse čeká **čárku** jako desetinný oddělovač.
+- `float.Parse("50,5")` ✓
+- `float.Parse("50.5")` ✗ runtime chyba *FormatException*
+
+### Stringy jsou immutable (neměnné) 
+Replace, Trim, ToLower **vrací nový string**, **nemění původní**. Musím **přiřadit zpátky**:
+```csharp
+textovyVstup = textovyVstup.Replace(".", ",");   // ✓ uloženo zpět
+textovyVstup.Replace(".", ",");                  // ✗ výsledek se zahodí
+```
+
+### Robustní čištění vstupu váhy 
+```csharp
+textovyVstup = textovyVstup.ToLower()
+                           .Replace(".", ",")
+                           .Replace("kg", "")
+                           .Trim();
+vahaKg = float.Parse(textovyVstup);
+```
+- **ToLower()** = všechno malými (KG → kg)
+- **Replace(".", ",")** = sjednocení oddělovače na čárku (kvůli českému locale)
+- **Replace("kg", "")** = pryč s jednotkami
+- **Trim()** = odstraní whitespace **jen na okrajích** (NE písmenka, NE mezery uvnitř — toho sem si pletla)
+
+### Method chaining 
+Když metoda vrátí string, můžu na ní rovnou volat další metodu: `.a().b().c()`. Funguje jako pipeline:
+```
+"50,5 kg"
+   .ToLower()            → "50,5 kg"
+   .Replace(".", ",")    → "50,5 kg"
+   .Replace("kg", "")    → "50,5 "
+   .Trim()               → "50,5"
+```
+
+### Limit Replace přístupu 
+Replace umí **jen přesnou shodu** toho co mu řeknu. Pro `kd`, `padesát kilo`, prázdný vstup → padá FormatException. Robustní řešení = **try-catch** nebo **float.TryParse** = až **S8**. Layer 1 hraje podle pravidel.
+
+### String interpolace 
+```csharp
+Console.WriteLine($"Tvoje panda: {jmenoPandy}, s váhou: {vahaKg} kg byla zaregistrována");
+```
+**$"…"** zapne interpolaci, **{název}** se nahradí hodnotou proměnné.
+
+### Compile-time vs runtime errors 
+**Compile-time** chyba (CS1002, CS0029, …) = kompilátor odmítne sestavit. Program **nikdy nepoběží**. Vidím to v terminálu hned po `dotnet run`.  
+**Runtime** chyba (FormatException, NullReferenceException, …) = program **běžel** a spadl na konkrétním vstupu.  
+**Pravidlo:** vždycky **první chyba**, ne poslední — jedna často spustí lavinu kaskádových chyb.
+
+### Co sem dnes pokazila a co sem se z toho naučila 
+- 3× zapomenutý středník u deklarace proměnných → CS1002
+- `vahaKg = Console.ReadLine()` místo `textovyVstup` — string nejde napřímo do float (compile error)
+- `string.Trim()` zkoušela sem volat na **typu** `string`, ne na **proměnné** — Trim je instance metoda, volá se na konkrétní hodnotě (`textovyVstup.Trim()`)
+- Tečka místo čárky u desetinných (locale → FormatException)
+- Trim zkoušela sem na všechno, ale on neodstraní písmenka uvnitř, jen whitespace z okrajů
+- `git add .` mi přilepilo `.lscache` do commitu → příště **konkrétní soubor**
+- Commit messages „commitni" / „prosím commit" → příště **co** sem udělala (`Session X: popis`)
+
+### Git workflow opakování 
+```bash
+git status                                     # co je modifikované
+git add src/PandaNursery/Program.cs            # konkrétní soubor, ne .
+git commit -m "Session 2: popis CO sem dělala" # zpráva říká CO
+git push                                       # nahraj na GitHub
+```
+
+### Užitečné navíc z terminálu 
+- **Ctrl + C** = ukončí běžící program (NE Cmd+C, to je copy)
+- **Tab** = autocomplete cesty
+- **Šipky** ↑↓ = historie příkazů
+- **`open -a "Visual Studio Code" .`** = otevři VS Code v aktuální složce (oklika za `code .`, dokud nezprovozním Shell Command)
