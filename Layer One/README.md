@@ -786,3 +786,65 @@ git push                                       # nahraj na GitHub
 - **Tab** = autocomplete cesty
 - **Šipky** ↑↓ = historie příkazů
 - **`open -a "Visual Studio Code" .`** = otevři VS Code v aktuální složce (oklika za `code .`, dokud nezprovozním Shell Command)
+
+
+## Session 1 + Session 2 — Calculator (samouk večer 15. 5. 2026)
+
+Po dokončení PandaNursery jsem si přepsala Calculator do **čistého S2 stavu** podle Martinova [demo-calculatoru](https://github.com/codetogodmode/demo-calculator). Cíl: projít si S1 + S2 znovu, krok po kroku, s vlastními komentáři.
+
+**Postup podle demo-calculatoru:**
+- S1 (commit `3a8c576`) = `Console.WriteLine("2+2=4");` v Main
+- S2 (commit `5f4b139`) = deklarace 4 proměnných + 2× ReadLine/Parse + součet + výpis interpolací
+
+### S1 v Calculatoru 
+Vyprázdnila sem celou Main + smazala stará S3 enum/switch věci (ve stashi to zůstalo). Začala sem od bílého plátna a napsala jediný řádek:
+```csharp
+Console.WriteLine("2+2=4");
+```
+Klasický S1 entry point — vidím, že to běží, struktura projektu funguje, můžu jít dál.
+
+### S2 v Calculatoru — postupně po blocích 
+
+**Blok 1: Deklarace 4 proměnných**
+```csharp
+string textoveCislo;        // přestupní stanice pro Parse
+float prvniCislo = 5;       // placeholder 5, hned přepíše ReadLine
+float druheCislo = 50;      // placeholder 50
+float vysledek = 100;       // placeholder 100
+```
+**Proč inicializace s placeholderem** (`= 5`, `= 50`, `= 100`)? Kompilátor by jinak hlásil *use of unassigned local variable*. V PandaNursery sem to řešila tak, že sem deklarovala prázdné a hned naplnila ReadLine před prvním použitím — to taky funguje, ale Martinova cesta s placeholderem je „pojistka, ať kompilátor nezlobí".
+
+**Blok 2: Sebrat první číslo (3 řádky)**
+```csharp
+Console.WriteLine("Řekni mi tvé první číslo a dej Enter");
+textoveCislo = Console.ReadLine();
+prvniCislo = float.Parse(textoveCislo);
+```
+Logicky to chci dělat v jednom kroku („zeptej se a sebem číslo"), ale C# to umí jen po krocích: **otázka** → **vstup** → **převod**.  
+Cesta dat: uživatel napíše `12,5` → ReadLine vrátí string `"12,5"` → uloží do `textoveCislo` (přestupní stanice) → `float.Parse` převede na float → uloží do `prvniCislo`.
+
+**Blok 3: Sebrat druhé číslo (3 řádky)**
+```csharp
+Console.WriteLine("Řekni mi tvé druhé číslo a dej Enter");
+textoveCislo = Console.ReadLine();
+druheCislo = float.Parse(textoveCislo);
+```
+**Stejný vzor**, jen ukládám do `druheCislo`. Pomocnou škatulku `textoveCislo` použiju **znova** — stará hodnota (`"12,5"`) se prostě **přepíše** novou. Šetří se tím paměť i řádky kódu.
+
+**Blok 4: Součet a výpis (2 řádky)**
+```csharp
+vysledek = prvniCislo + druheCislo;
+Console.WriteLine($"První číslo: {prvniCislo} | Druhé číslo {druheCislo} | Výsledek součtu tvých dvou čísel: {vysledek}");
+```
+**Klíčový moment:** `+` mezi dvěma **floaty** je matematický plus (sečte). `+` mezi dvěma **stringy** by bylo *lepení* textu (`"12" + "14"` = `"1214"`). Proto je důležité, že sem stringy z ReadLine **naparsovala na float** — kdybych nechala v `prvniCislo` string, dostala bych lepení místo součtu.
+
+### Co se mi v Calculatoru S2 ujasnilo navíc 
+- **`Console.ReadLine();` bez přiřazení** = počká na Enter, ale výsledek **zahodí**. Smysl má **jen jako přestávka** (málokdy). Pro výpis je to `Console.WriteLine()`, ne `ReadLine`.
+- **VS Code Run/Debug spouští debugger** (`vsdbg`) — v terminálu se mi zobrazí dlouhá cesta `/Users/.../.vscode/extensions/...`. Není to chyba, jen spousta šumu. Pro normální spouštění je čistější `dotnet run --project src/Calculator` v terminálu.
+- **Komentáře po řádcích** mi pomáhají — píšu si tam co tam dělám a proč.
+
+### Co tady **NENÍ** a přijde dál 
+- Žádný **výběr operace** (jen sčítání) → enum + switch/podmínky = **S3**.
+- Žádné **opakování** (program skončí po jednom součtu) → `while` cyklus = **S4**.
+- Žádné **ošetření blbého vstupu** (`abc` místo čísla → FormatException padá) → `try-catch` = **S8**.
+- Žádný **robustní parsing** (jen čárka, ne tečka) → můžu přidat `Replace + Trim` jako bonus z dnešní PandaNursery zkušenosti, ale Martin to v demu nemá.
