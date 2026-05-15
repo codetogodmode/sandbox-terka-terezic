@@ -222,6 +222,151 @@ Git status - řekne, že já sem nedělala žádné změny
 *git config --global user.email "you@example.com"
 git config --global user.name "Your Name"
 
+#### S2 - Datové typy, Terka Samouk
+
+Pravidlo z S1: každý příkaz v C# končí středníkem. To platí i pro deklaraci
+  proměnné (čili „rezervaci paměti" pod nějakým jménem).
+
+  Mezitím — krátký výlet do S2: co jsi vlastně napsala
+
+  Tohle:
+  string jmenoPandy;
+  říká kompilátoru: „vyhraď mi v paměti místo na text (string), říkej mu
+  jmenoPandy."
+
+  V paměti pak vznikne prázdná škatulka se jmenovkou jmenoPandy, do které ještě
+  nic není uloženo. Naplníš ji později (např. jmenoPandy = Console.ReadLine(); —
+  to bude další krok).
+
+  Rozklad jednoho řádku:
+  string   jmenoPandy   ;
+    ↑          ↑        ↑
+  typ       jméno    konec příkazu
+         proměnné
+
+  - Typ — jaký druh dat tam půjde:
+    - string = text (sekvence znaků v uvozovkách)
+    - int = celé číslo
+    - float = desetinné číslo (přibližně 7 desetinných míst přesnosti)
+    - bool = pravda/nepravda
+  - Jméno — jak budeš proměnnou v kódu volat. Konvence v C# = camelCase: první
+  písmeno malé, další slova s velkým: jmenoPandy, vahaKg, textovyVstup.
+  - Středník — konec příkazu.
+
+  Můžeš deklarovat a rovnou přiřadit:
+  string pozdrav = "Ahoj";   // deklarace + inicializace najednou
+
+  Nebo nejdřív deklarovat a později přiřadit:
+  string pozdrav;            // jen deklarace, "škatulka" prázdná
+  pozdrav = "Ahoj";          // přiřazení hodnoty
+
+  Pochvala mezi řečí
+
+  To, že sis kód rozdělila komentáři // Pozn. S1 a //S2:, je výborný zvyk. Budoucí
+   ty si to ocení.
+
+   Den 1 — co jsme spolu prošli
+
+  Terminál a navigace v projektu
+
+  - cd = change directory, ls = list, pwd = print working directory
+  - Mezi cd a cestou je mezera (sežrala tě jednou)
+  - Tab autocomplete, šipky v historii, drag & drop složky do terminálu
+  - Terminál neumí teleportovat — samotná cesta není příkaz
+  - Ctrl + C ukončí běžící program (NE Cmd+C)
+
+  .NET projekt a první spuštění
+
+  - dotnet run --project src/PandaNursery — celý prefix dotnet je povinný
+  - donet (překlep) → command not found (našel jsi i toto)
+  - Otevření VS Code z terminálu: open -a "Visual Studio Code" . (oklika),
+  případně code . po nastavení Shell Command
+
+  Struktura Program.cs (S1)
+
+  namespace PandaNursery;     // škatulka
+  class Program               // kontejner pro kód
+  {
+      static void Main(...)   // entry point — kde to začíná
+      {
+          // tvůj kód
+      }
+  }
+
+  - Console.WriteLine("text") — výpis + odřádkování
+  - Console.ReadKey() — počká na libovolnou klávesu
+  - Console.ReadLine() — počká na Enter, vrátí string
+  - Každý příkaz končí středníkem ;
+  - C# je case-sensitive (Console ≠ console)
+
+  Proměnné a typy (S2)
+
+  - Deklarace: typ jméno; (např. string jmenoPandy;)
+  - Typy: string (text), int (celé číslo), float (desetinné), bool (true/false)
+  - camelCase konvence: jmenoPandy, vahaKg, textovyVstup
+  - Přiřazení: proměnná = hodnota;
+  - Deklarace bez přiřazení = prázdná škatulka, do které nelze sahat dokud se
+  nenaplní
+
+  Vstup od uživatele a parsování
+
+  - Console.ReadLine() vrací VŽDY string, i kdyby uživatel napsal číslo
+  - Pro číslo musíš parsovat: float.Parse(textovyVstup)
+  - Pomocná škatulka textovyVstup = přestupní stanice mezi string a float
+
+  Locale a manipulace se stringy
+
+  To byla dnešní nejtěžší dovednost. Cesta:
+
+  1. Locale problém — český systém čeká 50,5 (čárka), 50.5 (tečka) spadne s
+  FormatException
+  2. Stringy jsou immutable — Replace a Trim vrací nový string, musíš si ho uložit
+   zpátky
+  3. string.Replace("co", "čím") — najít/nahradit
+  4. string.Trim() — odstraní whitespace jen z okrajů, NE písmenka uvnitř
+  5. string.ToLower() — celý string malými písmeny
+  6. Method chaining — .Replace(...).Replace(...).Trim() zřetězí volání
+
+  Finální robustní řádek, co jsi napsala:
+  textovyVstup = textovyVstup.ToLower()
+                             .Replace(".", ",")
+                             .Replace("kg", "")
+                             .Trim();
+
+  Akceptuje 50, 50,5, 50.5, 50 kg, 50,5kg, 50 KG, 50.5 Kg…
+
+  String interpolace
+
+  Console.WriteLine($"Tvoje panda: {jmenoPandy}, váha: {vahaKg} kg byla
+  zaregistrována");
+  - $ před "…" zapne interpolaci
+  - {proměnná} se za běhu nahradí hodnotou
+
+  Chyby — dva druhy
+
+  - Compile-time (např. CS1002 chybí středník) — program vůbec nespustí,
+  kompilátor odmítne sestavit
+  - Runtime (např. FormatException) — program běžel a spadl na konkrétním vstupu
+
+  Pravidlo: vždycky čti první chybu, ne poslední — jedna chyba často vyrobí
+  kaskádu dalších.
+
+  Limity Replace přístupu
+
+  - Replace umí jen přesné shody, co jsi mu řekla najít
+  - Pro vstupy jako kd, padesát, prázdný řetězec → spadne to
+  - Robustní řešení: try-catch nebo float.TryParse → S8
+
+  Git workflow
+
+  - git status — co je modifikované
+  - git add <konkrétní soubor> — do staging (NE git add ., vleze ti tam i bordel)
+  - git commit -m "Session X: popis CO" — checkpoint (NE commitni ani prosím
+  commit)
+  - git push — nahraj na GitHub
+  - Cache soubory (.lscache) se commitují, když dáš git add . — Martin to ale v
+  Layer 1 toleruje
+
 #### Základní datové typy 
 Číselné typy
     **int** - celá čísla
